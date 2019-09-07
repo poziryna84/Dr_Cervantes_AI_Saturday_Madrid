@@ -5,17 +5,14 @@ Created on Sat Aug 31 11:31:50 2019
 @author: pozir
 """
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+import pickle
 
-train_ident = pd.read_csv('data/train_identity.csv')
+
 train_trans = pd.read_csv('data/train_transaction.csv')
-
-
-# Not all transactions have corresponding identity information,
-# so let's get rid of unnecessary transaction data:
-    
-#train_trans = train_trans[train_trans.TransactionID.isin(train_ident.TransactionID)]
 
 #==============================================================================
 # isFraud
@@ -112,18 +109,9 @@ train_trans.card4.value_counts()
 
 train_trans['length_card1'] = train_trans['card1'].apply(lambda x: len(str(x)) if type(x) == int else 0)
 
-#train_trans['length_card2'] = train_trans['card2'][train_trans['card2'].notna()].apply(lambda x: x = 1)
-#train_trans['length_card2'].fillna(0, inplace = True)
-
 train_trans['length_card2'] = np.where(train_trans['card2'].notna(),1,0)
 
-#train_trans['length_card3'] = train_trans['card3'][train_trans['card3'].notna()].apply(lambda x: x = 1)
-#train_trans['length_card3'].fillna(0, inplace = True)
-
 train_trans['length_card3'] = np.where(train_trans['card3'].notna(),1,0)
-
-#train_trans['length_card5'] = train_trans['card5'][train_trans['card5'].notna()].apply(lambda x: len(str(int(x))))
-#train_trans['length_card5'].fillna(0, inplace = True)
 
 train_trans['length_card5'] = np.where(train_trans['card5'].notna(),1,0)
 
@@ -144,7 +132,6 @@ train_trans['second_dg_card5'] = train_trans['card5'].apply(lambda x: str(x)[1] 
 
 train_trans['card4'].fillna('none', inplace = True)
 train_trans['card6'].fillna('none', inplace = True)
-#train_trans['isFraud'] = train_trans['isFraud'].astype(int)
 
 #==============================================================================
 # addr1 and addr2
@@ -175,7 +162,6 @@ for line in data: # files are iterable
 train_trans['P_valid_email'] = np.where(train_trans['P_emaildomain'].isin(valid_email_list),1,0)   
 train_trans['R_valid_email'] = np.where(train_trans['R_emaildomain'].isin(valid_email_list),1,0)   
 
-
 #==============================================================================
 # D1-D15
 #==============================================================================
@@ -199,3 +185,64 @@ for i in train_trans:
         vs_list.append(i)
         
 fillna(df = train_trans, columns_list = vs_list)
+
+#==============================================================================
+# PCA & Clustering
+#==============================================================================
+
+selection = ['TransactionID','length_card1', 'length_card2',  'length_card5', 'TransactionAmt', 'card4', 'card6',
+             'ProductCD', 'first_dg_card1', 'first_dg_card2', 'first_dg_card3', 'first_dg_card5', 'second_dg_card1',
+             'second_dg_card2', 'second_dg_card3', 'second_dg_card5', 'isFraud', 'addr1_bin', 'addr2_bin',
+             'P_emaildomain_bin', 'R_emaildomain_bin', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8',
+             'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
+             'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'P_valid_email', 'R_valid_email']
+
+#selection = selection + vs_list
+df = train_trans[selection]
+pca = train_trans[vs_list]
+pca_data = StandardScaler().fit_transform(pca)
+
+pca = PCA(n_components= 150)
+pca_data = pca.fit_transform(pca_data)
+
+pca_data = pd.DataFrame(data=pca_data,    # 1st column as index
+            columns=['PCA_' + str(i) for i in range(1,151)])
+del train_trans
+#plt.plot(np.cumsum(pca.explained_variance_ratio_))
+#plt.xlabel('number of components')
+#plt.ylabel('cumulative explained variance') # 135
+
+#distortions = []
+#for i in range(1, 20):
+#    km = KMeans(
+#        n_clusters=i, init='random',
+#        n_init=10, max_iter=300,
+#        tol=1e-04, random_state=0
+#    )
+#    km.fit(pca_data)
+#    distortions.append(km.inertia_)
+#
+## plot
+#plt.plot(range(1, 20), distortions, marker='o')
+#plt.xlabel('Number of clusters')
+#plt.ylabel('Distortion')
+#plt.show()
+
+km =  KMeans(
+        n_clusters=5, init='random',
+        n_init=10, max_iter=300,
+        tol=1e-04, random_state=0
+    )
+
+pca5data = pd.DataFrame(km.fit_predict(pca_data))
+pca5data.index = pca_data.index
+
+
+df = pd.concat([df, pca5data], axis = 1)
+df.to_pickle('data/trans.pickle')
+#df = df.rename(columns={'0': 'cluster'})
+#
+#for i in df:
+#    print(i)
+
+del pca_data, pca5data, df

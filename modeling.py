@@ -69,8 +69,8 @@ df = pd.concat([df, pca5data], axis = 1)
 #    print(i)
 
 del pca_data, pca5data
-
-df.dropna(inplace = True)
+transaction_col =list( train_trans.columns)
+#df.dropna(inplace = True)
 
 df_dummies = pd.get_dummies(df[['card4', 'card6',
              'ProductCD', 'first_dg_card1', 'first_dg_card2', 'first_dg_card3', 'first_dg_card5', 'second_dg_card1',
