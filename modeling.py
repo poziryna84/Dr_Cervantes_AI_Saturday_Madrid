@@ -4,84 +4,45 @@ Created on Sat Aug 31 18:53:58 2019
 
 @author: pozir
 """
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import roc_auc_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 
-selection = ['length_card1', 'length_card2',  'length_card5', 'TransactionAmt', 'card4', 'card6',
-             'ProductCD', 'first_dg_card1', 'first_dg_card2', 'first_dg_card3', 'first_dg_card5', 'second_dg_card1',
-             'second_dg_card2', 'second_dg_card3', 'second_dg_card5', 'isFraud', 'addr1_bin', 'addr2_bin',
-             'P_emaildomain_bin', 'R_emaildomain_bin', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8',
-             'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
-             'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'P_valid_email', 'R_valid_email']
+'''
+                           Random Forest estimation
+'''
+#==============================================================================
+# Importing treated data
+#==============================================================================
 
-#selection = selection + vs_list
-df = train_trans[selection]
-pca = train_trans[vs_list]
-pca_data = StandardScaler().fit_transform(pca)
+df_trans = pd.read_pickle('data/trans.pickle')
+df_id = pd.read_pickle('data/id.pickle')
 
-pca = PCA(n_components= 150)
-pca_data = pca.fit_transform(pca_data)
+df = pd.merge(df_trans, 
+              df_id,
+              how = 'left', 
+              on = 'TransactionID').drop(
+                      'TransactionID', axis = 1)
 
-pca_data = pd.DataFrame(data=pca_data,    # 1st column as index
-            columns=['PCA_' + str(i) for i in range(1,151)])
-del train_trans
-#plt.plot(np.cumsum(pca.explained_variance_ratio_))
-#plt.xlabel('number of components')
-#plt.ylabel('cumulative explained variance') # 135
-
-#distortions = []
-#for i in range(1, 20):
-#    km = KMeans(
-#        n_clusters=i, init='random',
-#        n_init=10, max_iter=300,
-#        tol=1e-04, random_state=0
-#    )
-#    km.fit(pca_data)
-#    distortions.append(km.inertia_)
-#
-## plot
-#plt.plot(range(1, 20), distortions, marker='o')
-#plt.xlabel('Number of clusters')
-#plt.ylabel('Distortion')
-#plt.show()
-
-km =  KMeans(
-        n_clusters=5, init='random',
-        n_init=10, max_iter=300,
-        tol=1e-04, random_state=0
-    )
-
-pca5data = pd.DataFrame(km.fit_predict(pca_data))
-pca5data.index = pca_data.index
-
-
-df = pd.concat([df, pca5data], axis = 1)
-
-#df = df.rename(columns={'0': 'cluster'})
-#
-#for i in df:
-#    print(i)
-
-del pca_data, pca5data
-transaction_col =list( train_trans.columns)
-#df.dropna(inplace = True)
+del df_trans, df_id 
 
 df_dummies = pd.get_dummies(df[['card4', 'card6',
              'ProductCD', 'first_dg_card1', 'first_dg_card2', 'first_dg_card3', 'first_dg_card5', 'second_dg_card1',
-             'second_dg_card2', 'second_dg_card3', 'second_dg_card5']])
+             'second_dg_card2', 'second_dg_card3', 'second_dg_card5','id_12', 'id_15',
+             'id_16','id_23','id_27','id_28','id_29', 'id_30', 'id_32', 'id_34',
+             'id_35', 'id_36', 'id_37', 'id_38', 'DeviceType']])
 
 df = pd.concat([df, df_dummies], axis=1).drop(columns = ['card4', 'card6',
              'ProductCD', 'first_dg_card1', 'first_dg_card2', 'first_dg_card3', 'first_dg_card5', 'second_dg_card1',
-             'second_dg_card2', 'second_dg_card3', 'second_dg_card5'])
+             'second_dg_card2', 'second_dg_card3', 'second_dg_card5','id_12', 'id_15',
+             'id_16','id_23','id_27','id_28','id_29', 'id_30', 'id_32', 'id_34',
+             'id_35', 'id_36', 'id_37', 'id_38', 'DeviceType'])
 del df_dummies
 
-X = df.drop(['isFraud'], axis = 1)
+X = df.drop(['isFraud', 'id_34_match_status:-1', 'card6_charge card'], axis = 1)
 y = df['isFraud']
 
 del df
