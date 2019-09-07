@@ -44,9 +44,9 @@ train_trans = pd.read_csv('data/train_transaction.csv')
 #plt.title("TransactionDT Fraud")
 #plt.show()
 
-
-train_trans.days_ago = round(train_trans.TransactionDT/86400)
-train_trans.days_ago.isna().sum()
+#
+#train_trans.days_ago = round(train_trans.TransactionDT/86400)
+#train_trans.days_ago.isna().sum()
 #train_trans.days_ago = train_trans.days_ago.astype(int)
 #trans_delta = train_trans.days_ago.value_counts().to_frame(
 #        ).reset_index().rename(columns ={'index' : 'days',
@@ -77,29 +77,6 @@ plt.show()
 train_trans[train_trans.isFraud == 1].hist(column='TransactionAmt')
 plt.title("TransactionAmt Fraud")
 plt.show()
-
-#==============================================================================
-# ProductCD: product code, the product for each transaction
-#==============================================================================
-
-train_trans.ProductCD.value_counts(normalize = True)
-train_trans.ProductCD.isna().sum() # 0
-
-train_trans['ProductCD'].value_counts().plot(kind='bar')
-
-train_trans.ProductCD[train_trans.isFraud == 1].value_counts(normalize = True)
-train_trans.ProductCD[train_trans.isFraud == 0].value_counts(normalize = True)
-
-train_trans.isFraud[train_trans.ProductCD == 'C'].value_counts(normalize = True)
-train_trans.isFraud[train_trans.ProductCD == 'R'].value_counts(normalize = True)
-train_trans.isFraud[train_trans.ProductCD == 'H'].value_counts(normalize = True)
-train_trans.isFraud[train_trans.ProductCD == 'S'].value_counts(normalize = True)
-
-
-train_trans.TransactionAmt[train_trans.ProductCD == 'C'].describe()
-train_trans.TransactionAmt[train_trans.ProductCD == 'R'].describe()
-train_trans.TransactionAmt[train_trans.ProductCD == 'H'].describe()
-train_trans.TransactionAmt[train_trans.ProductCD == 'S'].describe()
 
 #==============================================================================
 # card1 - card6: payment card information, such as card type, card category, issue bank, country, etc
@@ -208,25 +185,6 @@ pca_data = pca.fit_transform(pca_data)
 pca_data = pd.DataFrame(data=pca_data,    # 1st column as index
             columns=['PCA_' + str(i) for i in range(1,151)])
 del train_trans
-#plt.plot(np.cumsum(pca.explained_variance_ratio_))
-#plt.xlabel('number of components')
-#plt.ylabel('cumulative explained variance') # 135
-
-#distortions = []
-#for i in range(1, 20):
-#    km = KMeans(
-#        n_clusters=i, init='random',
-#        n_init=10, max_iter=300,
-#        tol=1e-04, random_state=0
-#    )
-#    km.fit(pca_data)
-#    distortions.append(km.inertia_)
-#
-## plot
-#plt.plot(range(1, 20), distortions, marker='o')
-#plt.xlabel('Number of clusters')
-#plt.ylabel('Distortion')
-#plt.show()
 
 km =  KMeans(
         n_clusters=5, init='random',
@@ -240,9 +198,5 @@ pca5data.index = pca_data.index
 
 df = pd.concat([df, pca5data], axis = 1)
 df.to_pickle('data/trans.pickle')
-#df = df.rename(columns={'0': 'cluster'})
-#
-#for i in df:
-#    print(i)
 
 del pca_data, pca5data, df
