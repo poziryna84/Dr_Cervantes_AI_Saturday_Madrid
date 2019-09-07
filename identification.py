@@ -6,8 +6,7 @@ Created on Sun Sep  1 15:21:02 2019
 """
 
 import pandas as pd
-#import matplotlib.pyplot as plt
-#import numpy as np
+import pickle
 
 train_ident = pd.read_csv('data/train_identity.csv')
 train_trans = pd.read_csv('data/train_transaction.csv')
@@ -192,48 +191,5 @@ train_ident[categ_var] = train_ident[categ_var].fillna('notknown')
                   Final info dataset
 '''
 total_id = categ_var + numeric_var + ['TransactionID']
-train_ident = train_ident[train_dgrfdDGrqarwfrident]
-'''
-                 Modeling
-'''
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from sklearn.metrics import classification_report
-from sklearn.metrics import roc_auc_score
-
-df = train_ident[total_info]
-
-del train_ident
-
-df_dummies = pd.get_dummies(df[categ_var])
-
-df = pd.concat([df, df_dummies], axis=1).drop(columns = categ_var)
-del df_dummies
-
-X = df.drop(['isFraud'], axis = 1)
-y = df['isFraud']
-
-
-X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.15, 
-        stratify = y,
-        random_state=42)
-del X, y
-
-clf = RandomForestClassifier(criterion='gini', n_estimators=100, max_depth=None,
-                             random_state=123, class_weight= None)
-
-clf.fit(X_train, y_train)
-predictions = clf.predict(X_test)
-
-print(f1_score(y_test, predictions, average = None))
-print(classification_report(y_test, predictions))
-print(roc_auc_score(y_test, predictions))
-importances = clf.feature_importances_
-
-feature_importance = pd.DataFrame({
-        'variables' : list(X_train.columns),
-        'score' : list(importances)
-        }).sort_values(by=['score'],ascending=False)
+train_ident = train_ident[total_id]
+train_ident.to_pickle('data/id.pickle')
